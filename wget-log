@@ -1,0 +1,17 @@
+Will not apply HSTS. The HSTS database must be a regular and non-world-writable file.
+ERROR: could not open HSTS store at '/home/zerui_liu/.wget-hsts'. HSTS will be disabled.
+--2021-09-29 09:22:50--  http://kmtnet.kasi.re.kr/~ulens/event/2017/data/KB170097/pysis/pysis.tar.gz
+Resolving kmtnet.kasi.re.kr (kmtnet.kasi.re.kr)... 210.219.33.212
+Connecting to kmtnet.kasi.re.kr (kmtnet.kasi.re.kr)|210.219.33.212|:80... connected.
+HTTP request sent, awaiting response... 301 Moved Permanently
+Location: https://kmtnet.kasi.re.kr/~ulens/event/2017/data/KB170097/pysis/pysis.tar.gz [following]
+--2021-09-29 09:22:50--  https://kmtnet.kasi.re.kr/~ulens/event/2017/data/KB170097/pysis/pysis.tar.gz
+Connecting to kmtnet.kasi.re.kr (kmtnet.kasi.re.kr)|210.219.33.212|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 292661 (286K) [application/x-gzip]
+Saving to: ‘/mnt/e/KMT_catalog/temp.tar.gz’
+
+/mnt/e/KMT_catalog/temp.tar.gz        13%[========>                                                            ]  40.00K   148KB/s               /mnt/e/KMT_catalog/temp.tar.gz        30%[====================>                                                ]  88.00K   186KB/s               /mnt/e/KMT_catalog/temp.tar.gz        53%[===================================>                                 ] 152.00K   206KB/s               /mnt/e/KMT_catalog/temp.tar.gz        69%[===============================================>                     ] 200.00K   187KB/s               /mnt/e/KMT_catalog/temp.tar.gz       100%[====================================================================>] 285.80K   225KB/s               /mnt/e/KMT_catalog/temp.tar.gz       100%[====================================================================>] 285.80K   225KB/s    in 1.3s    
+
+2021-09-29 09:22:52 (225 KB/s) - ‘/mnt/e/KMT_catalog/temp.tar.gz’ saved [292661/292661]
+
