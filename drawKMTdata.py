@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 import os
 import re
+import pandas as pd
 
 def magnitude_tran(magni,m_0=18):
     return m_0 - 2.5*np.log10(magni)
@@ -66,7 +67,13 @@ def getKMTIfilelist(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
 
 
 
-def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
+def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
+    data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
+    KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d/"%(year,posi,)].values[0]
+    t_0_KMT = KMT_official_args[-3]
+    t_E_KMT = KMT_official_args[-2]
+    u_0_KMT = KMT_official_args[-1]
+
     path = rootdir+"%d_%04d/"%(year,posi,)
     filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
     datas_A = [np.loadtxt(path+filename).T for filename in filelistI_A]
@@ -77,7 +84,7 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
     data_S = np.hstack(datas_S)
 
 
-    print(data_A.shape)
+    # print(data_A.shape)
 
     data = np.c_[data_A,data_C,data_S]
     time = data[0]
@@ -140,4 +147,4 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
     plt.savefig("test_realKMT.png")
     plt.close()
 
-DrawKMTdata(posi=2)
+DrawKMTdata(year=2018,posi=577)
