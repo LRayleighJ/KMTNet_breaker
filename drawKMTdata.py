@@ -69,10 +69,13 @@ def getKMTIfilelist(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
 
 def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
     data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
-    KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d/"%(year,posi,)].values[0]
+    KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d"%(year,posi,)].values[0]
     t_0_KMT = KMT_official_args[-3]
     t_E_KMT = KMT_official_args[-2]
     u_0_KMT = KMT_official_args[-1]
+    print(KMT_official_args)
+    print(t_0_KMT)
+    print(t_E_KMT)
 
     path = rootdir+"%d_%04d/"%(year,posi,)
     filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
@@ -90,61 +93,129 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
     time = data[0]
     mag = data[3]
     errorbar = data[4]
+    print(len(time))
 
-    order = np.argsort(time)
-    time = time[order]
-    mag = mag[order]
-    errorbar = errorbar[order]
+    # select
 
-    print(len(data_A[0])+len(data_C[0])+len(data_S[0]))
+    if cut != 0:
+        time_select_index = np.argwhere((time<t_0_KMT+2*t_E_KMT)&(time>t_0_KMT-2*t_E_KMT)).T[0]
+        time = time[time_select_index]
+        mag = mag[time_select_index]
+        errorbar = errorbar[time_select_index]
+        print(len(time))
+        data_A_index = np.argwhere((data_A[0]<t_0_KMT+2*t_E_KMT)&(data_A[0]>t_0_KMT-2*t_E_KMT)).T[0]
+        data_C_index = np.argwhere((data_C[0]<t_0_KMT+2*t_E_KMT)&(data_C[0]>t_0_KMT-2*t_E_KMT)).T[0]
+        data_S_index = np.argwhere((data_S[0]<t_0_KMT+2*t_E_KMT)&(data_S[0]>t_0_KMT-2*t_E_KMT)).T[0]
 
-    plt.figure(figsize=(21,15))
+        order = np.argsort(time)
+        time = time[order]
+        mag = mag[order]
+        errorbar = errorbar[order]
 
-    ax1 = plt.subplot2grid((7,1), (0,0), rowspan=4)
-    plt.scatter(data_A[0],data_A[3],s=6,alpha=0.5,label="KMTA")
-    plt.errorbar(data_A[0],data_A[3],yerr=data_A[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
-    plt.scatter(data_C[0],data_C[3],s=6,alpha=0.5,label="KMTC")
-    plt.errorbar(data_C[0],data_C[3],yerr=data_C[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
-    plt.scatter(data_S[0],data_S[3],s=6,alpha=0.5,label="KMTS")
-    plt.errorbar(data_S[0],data_S[3],yerr=data_S[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+        
+        plt.figure(figsize=(21,15))
 
-    # plt.plot(time_simulate+t0,mag_simulate+19.59,c="black",linewidth=1,label="Best Fit")
-    # plt.plot(time_simulate_2+t0,mag_simulate_2+19.59,c="r",linewidth=1,label="MDN Predicted")
+        ax1 = plt.subplot2grid((7,1), (0,0), rowspan=4)
+        plt.scatter(data_A[0][data_A_index],data_A[3][data_A_index],s=6,alpha=0.5,label="KMTA")
+        plt.errorbar(data_A[0][data_A_index],data_A[3][data_A_index],yerr=data_A[4][data_A_index],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+        plt.scatter(data_C[0][data_C_index],data_C[3][data_C_index],s=6,alpha=0.5,label="KMTC")
+        plt.errorbar(data_C[0][data_C_index],data_C[3][data_C_index],yerr=data_C[4][data_C_index],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+        plt.scatter(data_S[0][data_S_index],data_S[3][data_S_index],s=6,alpha=0.5,label="KMTS")
+        plt.errorbar(data_S[0][data_S_index],data_S[3][data_S_index],yerr=data_S[4][data_S_index],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
 
-    plt.xlabel("t/HJD-2450000",fontsize=16)
-    plt.ylabel("Magnitude",fontsize=16)
-    plt.legend()
-    
-    plt.gca().invert_yaxis()
+        # plt.plot(time_simulate+t0,mag_simulate+19.59,c="black",linewidth=1,label="Best Fit")
+        # plt.plot(time_simulate_2+t0,mag_simulate_2+19.59,c="r",linewidth=1,label="MDN Predicted")
 
-    ax2 = plt.subplot2grid((7,1), (4, 0))
-    plt.scatter(data_A[0],data_A[-3],s=6,alpha=0.5,label="KMTA")
-    plt.scatter(data_C[0],data_C[-3],s=6,alpha=0.5,label="KMTC")
-    plt.scatter(data_S[0],data_S[-3],s=6,alpha=0.5,label="KMTS")
-    plt.legend()
-    plt.xlabel("t/HJD-2450000")
-    plt.ylabel("FWHM")
-    ax3 = plt.subplot2grid((7,1), (5, 0))
-    plt.scatter(data_A[0],data_A[-2],s=6,alpha=0.5,label="KMTA")
-    plt.scatter(data_C[0],data_C[-2],s=6,alpha=0.5,label="KMTC")
-    plt.scatter(data_S[0],data_S[-2],s=6,alpha=0.5,label="KMTS")
-    plt.legend()
-    plt.xlabel("t/HJD-2450000")
-    plt.ylabel("Sky")
-    ax4 = plt.subplot2grid((7,1), (6, 0))
-    plt.scatter(data_A[0],data_A[-1],s=6,alpha=0.5,label="KMTA")
-    plt.scatter(data_C[0],data_C[-1],s=6,alpha=0.5,label="KMTC")
-    plt.scatter(data_S[0],data_S[-1],s=6,alpha=0.5,label="KMTS")
-    plt.legend()
-    plt.xlabel("t/HJD-2450000")
-    plt.ylabel("secz")
-    '''
-    '''
-    plt.suptitle("KMT-%d-BLG-%04d"%(year,posi,),fontsize=32)
+        plt.xlabel("t/HJD-2450000",fontsize=16)
+        plt.ylabel("Magnitude",fontsize=16)
+        plt.legend()
+        
+        plt.gca().invert_yaxis()
 
-    plt.show()
+        ax2 = plt.subplot2grid((7,1), (4, 0))
+        plt.scatter(data_A[0][data_A_index],data_A[-3][data_A_index],s=6,alpha=0.5,label="KMTA")
+        plt.scatter(data_C[0][data_C_index],data_C[-3][data_C_index],s=6,alpha=0.5,label="KMTC")
+        plt.scatter(data_S[0][data_S_index],data_S[-3][data_S_index],s=6,alpha=0.5,label="KMTS")
+        plt.legend()
+        plt.xlabel("t/HJD-2450000")
+        plt.ylabel("FWHM")
+        ax3 = plt.subplot2grid((7,1), (5, 0))
+        plt.scatter(data_A[0][data_A_index],data_A[-2][data_A_index],s=6,alpha=0.5,label="KMTA")
+        plt.scatter(data_C[0][data_C_index],data_C[-2][data_C_index],s=6,alpha=0.5,label="KMTC")
+        plt.scatter(data_S[0][data_S_index],data_S[-2][data_S_index],s=6,alpha=0.5,label="KMTS")
+        plt.legend()
+        plt.xlabel("t/HJD-2450000")
+        plt.ylabel("Sky")
+        ax4 = plt.subplot2grid((7,1), (6, 0))
+        plt.scatter(data_A[0][data_A_index],data_A[-1][data_A_index],s=6,alpha=0.5,label="KMTA")
+        plt.scatter(data_C[0][data_C_index],data_C[-1][data_C_index],s=6,alpha=0.5,label="KMTC")
+        plt.scatter(data_S[0][data_S_index],data_S[-1][data_S_index],s=6,alpha=0.5,label="KMTS")
+        plt.legend()
+        plt.xlabel("t/HJD-2450000")
+        plt.ylabel("secz")
+        '''
+        '''
+        plt.suptitle("KMT-%d-BLG-%04d"%(year,posi,),fontsize=32)
 
-    plt.savefig("test_realKMT.png")
-    plt.close()
+        plt.show()
 
-DrawKMTdata(year=2018,posi=577)
+        plt.savefig("test_realKMT_cut.png")
+        plt.close()
+    else:
+        order = np.argsort(time)
+        time = time[order]
+        mag = mag[order]
+        errorbar = errorbar[order]
+
+        
+        plt.figure(figsize=(21,15))
+
+        ax1 = plt.subplot2grid((7,1), (0,0), rowspan=4)
+        plt.scatter(data_A[0],data_A[3],s=6,alpha=0.5,label="KMTA")
+        plt.errorbar(data_A[0],data_A[3],yerr=data_A[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+        plt.scatter(data_C[0],data_C[3],s=6,alpha=0.5,label="KMTC")
+        plt.errorbar(data_C[0],data_C[3],yerr=data_C[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+        plt.scatter(data_S[0],data_S[3],s=6,alpha=0.5,label="KMTS")
+        plt.errorbar(data_S[0],data_S[3],yerr=data_S[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+
+        # plt.plot(time_simulate+t0,mag_simulate+19.59,c="black",linewidth=1,label="Best Fit")
+        # plt.plot(time_simulate_2+t0,mag_simulate_2+19.59,c="r",linewidth=1,label="MDN Predicted")
+
+        plt.xlabel("t/HJD-2450000",fontsize=16)
+        plt.ylabel("Magnitude",fontsize=16)
+        plt.legend()
+        
+        plt.gca().invert_yaxis()
+
+        ax2 = plt.subplot2grid((7,1), (4, 0))
+        plt.scatter(data_A[0],data_A[-3],s=6,alpha=0.5,label="KMTA")
+        plt.scatter(data_C[0],data_C[-3],s=6,alpha=0.5,label="KMTC")
+        plt.scatter(data_S[0],data_S[-3],s=6,alpha=0.5,label="KMTS")
+        plt.legend()
+        plt.xlabel("t/HJD-2450000")
+        plt.ylabel("FWHM")
+        ax3 = plt.subplot2grid((7,1), (5, 0))
+        plt.scatter(data_A[0],data_A[-2],s=6,alpha=0.5,label="KMTA")
+        plt.scatter(data_C[0],data_C[-2],s=6,alpha=0.5,label="KMTC")
+        plt.scatter(data_S[0],data_S[-2],s=6,alpha=0.5,label="KMTS")
+        plt.legend()
+        plt.xlabel("t/HJD-2450000")
+        plt.ylabel("Sky")
+        ax4 = plt.subplot2grid((7,1), (6, 0))
+        plt.scatter(data_A[0],data_A[-1],s=6,alpha=0.5,label="KMTA")
+        plt.scatter(data_C[0],data_C[-1],s=6,alpha=0.5,label="KMTC")
+        plt.scatter(data_S[0],data_S[-1],s=6,alpha=0.5,label="KMTS")
+        plt.legend()
+        plt.xlabel("t/HJD-2450000")
+        plt.ylabel("secz")
+        '''
+        '''
+        plt.suptitle("KMT-%d-BLG-%04d"%(year,posi,),fontsize=32)
+
+        plt.show()
+
+        plt.savefig("test_realKMT.png")
+        plt.close()
+
+DrawKMTdata(year=2018,posi=1046,cut=1)
+DrawKMTdata(year=2018,posi=1046,cut=0)
