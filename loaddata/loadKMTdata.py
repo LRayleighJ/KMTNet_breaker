@@ -10,6 +10,15 @@ import pandas as pd
 def magnitude_tran(magni,m_0=18):
     return m_0 - 2.5*np.log10(magni)
 
+def single_amptitude(t,t_0,t_E,u_0):
+    u = np.sqrt(((t-t_0)/t_E)**2+u_0**2)
+    
+    amp = (u**2+2)/(u*np.sqrt(u**2+4))
+    return amp
+
+def single_mag(t,t_0,t_E,u_0,m_0):
+    return magnitude_tran(single_amptitude(t,t_0,t_E,u_0),m_0)
+
 def trajectory(timedomain,q,s,u0,alpha,te,rho):
     bl_model = mm.Model({'t_0': 0, 'u_0': u0,'t_E': te, 'rho': rho, 'q': q, 's': s,'alpha': alpha})
     bl_model.set_default_magnification_method("VBBL")
@@ -67,15 +76,19 @@ def getKMTIfilelist(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
 
 
 
-def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
+def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
     data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
     KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d"%(year,posi,)].values[0]
-    t_0_KMT = KMT_official_args[-3]
-    t_E_KMT = KMT_official_args[-2]
-    u_0_KMT = KMT_official_args[-1]
+    t_0_KMT = KMT_official_args[-4]
+    t_E_KMT = KMT_official_args[-3]
+    u_0_KMT = KMT_official_args[-2]
+    Ibase_KMT = KMT_official_args[-1]
     print(KMT_official_args)
     print(t_0_KMT)
     print(t_E_KMT)
+
+    
+
 
     path = rootdir+"%d_%04d/"%(year,posi,)
     filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
@@ -90,11 +103,16 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
     # print(data_A.shape)
 
     data = np.c_[data_A,data_C,data_S]
-    time = data[0]
+    time = np.linspace(np.min(data[0]),np.max(data[0]),1000)
     mag = data[3]
     errorbar = data[4]
     print(len(time))
 
+    if fit:
+        mag_fit = single_mag(t=time,t_0=t_0_KMT,t_E=t_E_KMT,m_0=21.31,u_0=u_0_KMT)
+        #mulensmodel
+        my_pspl_model = mm.Model({'t_0': t_0_KMT, 'u_0': u_0_KMT, 't_E': t_E_KMT})
+        mag_fit_mm = magnitude_tran(my_pspl_model.magnification(time),m_0=21.31)
     # select
 
     if cut != 0:
@@ -177,6 +195,9 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
         plt.errorbar(data_C[0],data_C[3],yerr=data_C[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
         plt.scatter(data_S[0],data_S[3],s=6,alpha=0.5,label="KMTS")
         plt.errorbar(data_S[0],data_S[3],yerr=data_S[4],fmt='o',capsize=2,elinewidth=1,ms=0,zorder=0, alpha=0.5)
+        if fit:
+            plt.plot(time,mag_fit)
+            plt.plot(time,mag_fit_mm)
 
         # plt.plot(time_simulate+t0,mag_simulate+19.59,c="black",linewidth=1,label="Best Fit")
         # plt.plot(time_simulate_2+t0,mag_simulate_2+19.59,c="r",linewidth=1,label="MDN Predicted")
@@ -217,5 +238,8 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
         plt.savefig("test_realKMT.png")
         plt.close()
 
-DrawKMTdata(year=2018,posi=1046,cut=1)
-DrawKMTdata(year=2018,posi=1046,cut=0)
+
+
+
+DrawKMTdata(year=2018,posi=3,cut=1,fit=1)
+DrawKMTdata(year=2018,posi=3,cut=0,fit=1)
