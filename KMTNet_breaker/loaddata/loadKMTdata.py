@@ -74,6 +74,63 @@ def getKMTIfilelist(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
 
     return filelist_A,filelist_C,filelist_S
 
+def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
+    data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
+    KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d"%(year,posi,)].values[0]
+    t_0_KMT = KMT_official_args[-4]
+    t_E_KMT = KMT_official_args[-3]
+    u_0_KMT = KMT_official_args[-2]
+    Ibase_KMT = KMT_official_args[-1]
+
+    path = rootdir+"%d_%04d/"%(year,posi,)
+    filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
+    datas_A = [np.loadtxt(path+filename).T for filename in filelistI_A]
+    datas_C = [np.loadtxt(path+filename).T for filename in filelistI_C]
+    datas_S = [np.loadtxt(path+filename).T for filename in filelistI_S]
+    data_A = np.hstack(datas_A)
+    data_C = np.hstack(datas_C)
+    data_S = np.hstack(datas_S)
+
+
+    # print(data_A.shape)
+
+    data = np.c_[data_A,data_C,data_S]
+    time = np.linspace(np.min(data[0]),np.max(data[0]),1000)
+    mag = data[3]
+    errorbar = data[4]
+
+    if cut != 0:
+        time_select_index = np.argwhere((time<t_0_KMT+2*t_E_KMT)&(time>t_0_KMT-2*t_E_KMT)).T[0]
+        time = time[time_select_index]
+        mag = mag[time_select_index]
+        errorbar = errorbar[time_select_index]
+        print(len(time))
+        data_A_index = np.argwhere((data_A[0]<t_0_KMT+2*t_E_KMT)&(data_A[0]>t_0_KMT-2*t_E_KMT)).T[0]
+        data_C_index = np.argwhere((data_C[0]<t_0_KMT+2*t_E_KMT)&(data_C[0]>t_0_KMT-2*t_E_KMT)).T[0]
+        data_S_index = np.argwhere((data_S[0]<t_0_KMT+2*t_E_KMT)&(data_S[0]>t_0_KMT-2*t_E_KMT)).T[0]
+
+        order = np.argsort(time)
+        time = time[order]
+        mag = mag[order]
+        errorbar = errorbar[order]
+
+        dataA_sort = np.array([data_A[0][data_A_index],data_A[3][data_A_index],data_A[4][data_A_index]])
+        dataC_sort = np.array([data_C[0][data_C_index],data_C[3][data_C_index],data_C[4][data_C_index]])
+        dataS_sort = np.array([data_S[0][data_S_index],data_S[3][data_S_index],data_S[4][data_S_index]])
+        return np.array([time,mag,errorbar]), dataA_sort, dataC_sort, dataS_sort 
+    else:
+        order = np.argsort(time)
+        time = time[order]
+        mag = mag[order]
+        errorbar = errorbar[order]
+
+        dataA_sort = np.array([data_A[0],data_A[3],data_A[4]])
+        dataC_sort = np.array([data_C[0],data_C[3],data_C[4]])
+        dataS_sort = np.array([data_S[0],data_S[3],data_S[4]])
+
+        return np.array([time,mag,errorbar]), dataA_sort, dataC_sort, dataS_sort
+    
+
 
 
 def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
@@ -88,8 +145,6 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
     print(t_E_KMT)
 
     
-
-
     path = rootdir+"%d_%04d/"%(year,posi,)
     filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
     datas_A = [np.loadtxt(path+filename).T for filename in filelistI_A]
@@ -239,7 +294,3 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
         plt.close()
 
 
-
-
-DrawKMTdata(year=2018,posi=3,cut=1,fit=1)
-DrawKMTdata(year=2018,posi=3,cut=0,fit=1)
