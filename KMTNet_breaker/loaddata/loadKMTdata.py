@@ -19,6 +19,10 @@ def single_amptitude(t,t_0,t_E,u_0):
 def single_mag(t,t_0,t_E,u_0,m_0):
     return magnitude_tran(single_amptitude(t,t_0,t_E,u_0),m_0)
 
+def killnan(data):
+    return data[:, ~np.isnan(data).any(axis=0)]
+
+
 def trajectory(timedomain,q,s,u0,alpha,te,rho):
     bl_model = mm.Model({'t_0': 0, 'u_0': u0,'t_E': te, 'rho': rho, 'q': q, 's': s,'alpha': alpha})
     bl_model.set_default_magnification_method("VBBL")
@@ -74,7 +78,7 @@ def getKMTIfilelist(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
 
     return filelist_A,filelist_C,filelist_S
 
-def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
+def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2):
     data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
     KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d"%(year,posi,)].values[0]
     t_0_KMT = KMT_official_args[-4]
@@ -95,19 +99,19 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
     # print(data_A.shape)
 
     data = np.c_[data_A,data_C,data_S]
-    time = np.linspace(np.min(data[0]),np.max(data[0]),1000)
+    time = data[0]
     mag = data[3]
     errorbar = data[4]
 
     if cut != 0:
-        time_select_index = np.argwhere((time<t_0_KMT+2*t_E_KMT)&(time>t_0_KMT-2*t_E_KMT)).T[0]
+        time_select_index = np.argwhere((time<t_0_KMT+cutratio*t_E_KMT)&(time>t_0_KMT-cutratio*t_E_KMT)).T[0]
         time = time[time_select_index]
         mag = mag[time_select_index]
         errorbar = errorbar[time_select_index]
         print(len(time))
-        data_A_index = np.argwhere((data_A[0]<t_0_KMT+2*t_E_KMT)&(data_A[0]>t_0_KMT-2*t_E_KMT)).T[0]
-        data_C_index = np.argwhere((data_C[0]<t_0_KMT+2*t_E_KMT)&(data_C[0]>t_0_KMT-2*t_E_KMT)).T[0]
-        data_S_index = np.argwhere((data_S[0]<t_0_KMT+2*t_E_KMT)&(data_S[0]>t_0_KMT-2*t_E_KMT)).T[0]
+        data_A_index = np.argwhere((data_A[0]<t_0_KMT+cutratio*t_E_KMT)&(data_A[0]>t_0_KMT-cutratio*t_E_KMT)).T[0]
+        data_C_index = np.argwhere((data_C[0]<t_0_KMT+cutratio*t_E_KMT)&(data_C[0]>t_0_KMT-cutratio*t_E_KMT)).T[0]
+        data_S_index = np.argwhere((data_S[0]<t_0_KMT+cutratio*t_E_KMT)&(data_S[0]>t_0_KMT-cutratio*t_E_KMT)).T[0]
 
         order = np.argsort(time)
         time = time[order]
@@ -117,7 +121,7 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
         dataA_sort = np.array([data_A[0][data_A_index],data_A[3][data_A_index],data_A[4][data_A_index]])
         dataC_sort = np.array([data_C[0][data_C_index],data_C[3][data_C_index],data_C[4][data_C_index]])
         dataS_sort = np.array([data_S[0][data_S_index],data_S[3][data_S_index],data_S[4][data_S_index]])
-        return np.array([time,mag,errorbar]), dataA_sort, dataC_sort, dataS_sort 
+        return KMT_official_args,killnan(np.array([time,mag,errorbar])), killnan(dataA_sort), killnan(dataC_sort), killnan(dataS_sort) 
     else:
         order = np.argsort(time)
         time = time[order]
@@ -128,7 +132,7 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0):
         dataC_sort = np.array([data_C[0],data_C[3],data_C[4]])
         dataS_sort = np.array([data_S[0],data_S[3],data_S[4]])
 
-        return np.array([time,mag,errorbar]), dataA_sort, dataC_sort, dataS_sort
+        return KMT_official_args,killnan(np.array([time,mag,errorbar])), killnan(dataA_sort), killnan(dataC_sort), killnan(dataS_sort)
     
 
 
@@ -158,7 +162,7 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
     # print(data_A.shape)
 
     data = np.c_[data_A,data_C,data_S]
-    time = np.linspace(np.min(data[0]),np.max(data[0]),1000)
+    time = data[0]
     mag = data[3]
     errorbar = data[4]
     print(len(time))
