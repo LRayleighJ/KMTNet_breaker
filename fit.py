@@ -19,7 +19,7 @@ def chi_square(single,binary,sigma):
     return np.sum(np.power((single-binary)/sigma,2))
 
 
-args,data,_,_,_= loaddata.getKMTdata(year=2018,posi=1046,cut=1,cutratio=2)
+args,data,_,_,_= loaddata.getKMTdata(year=2018,posi=1046,cut=1,cutratio=2,FWHM_threshold=4,sky_threshold=500)
 print(args)
 
 time = data[0]

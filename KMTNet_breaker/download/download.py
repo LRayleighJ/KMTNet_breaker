@@ -32,8 +32,6 @@ def download(index):
 
 
 if __name__=="__main__":
-    
-    
     print("cpu_count:",os.cpu_count())
     with mp.Pool(6) as p:
         p.map(download, range(num_total))

@@ -9,3 +9,5 @@ These codes are used for dealing with the data of KMTNet.
     * `loadKMTdata.py`: Visualizing data from KMTNet.
 
 To build your own catalog in your PC, please first run `download.py`. And you should install the package `MulensModel`.
+
+## remake KMT simudata

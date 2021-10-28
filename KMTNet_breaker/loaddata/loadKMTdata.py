@@ -7,6 +7,8 @@ import os
 import re
 import pandas as pd
 
+
+
 def magnitude_tran(magni,m_0=18):
     return m_0 - 2.5*np.log10(magni)
 
@@ -21,6 +23,12 @@ def single_mag(t,t_0,t_E,u_0,m_0):
 
 def killnan(data):
     return data[:, ~np.isnan(data).any(axis=0)]
+
+def killinf(data):
+    return data[:, ~np.isinf(data).any(axis=0)]
+
+def killstr(data):
+    return data[~(data == "___").any(axis=1)].astype(np.float)
 
 
 def trajectory(timedomain,q,s,u0,alpha,te,rho):
@@ -78,7 +86,8 @@ def getKMTIfilelist(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1):
 
     return filelist_A,filelist_C,filelist_S
 
-def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2):
+def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2,FWHM_threshold=7,sky_threshold=1000):
+    ## [HJD  \Delta_flux flux_err  mag  mag_err  fwhm  sky  secz]
     data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
     KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d"%(year,posi,)].values[0]
     t_0_KMT = KMT_official_args[-4]
@@ -88,9 +97,9 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2
 
     path = rootdir+"%d_%04d/"%(year,posi,)
     filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
-    datas_A = [np.loadtxt(path+filename).T for filename in filelistI_A]
-    datas_C = [np.loadtxt(path+filename).T for filename in filelistI_C]
-    datas_S = [np.loadtxt(path+filename).T for filename in filelistI_S]
+    datas_A = [killstr(np.loadtxt(path+filename,dtype=str)).T for filename in filelistI_A]
+    datas_C = [killstr(np.loadtxt(path+filename,dtype=str)).T for filename in filelistI_C]
+    datas_S = [killstr(np.loadtxt(path+filename,dtype=str)).T for filename in filelistI_S]
     data_A = np.hstack(datas_A)
     data_C = np.hstack(datas_C)
     data_S = np.hstack(datas_S)
@@ -109,9 +118,9 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2
         mag = mag[time_select_index]
         errorbar = errorbar[time_select_index]
         print(len(time))
-        data_A_index = np.argwhere((data_A[0]<t_0_KMT+cutratio*t_E_KMT)&(data_A[0]>t_0_KMT-cutratio*t_E_KMT)).T[0]
-        data_C_index = np.argwhere((data_C[0]<t_0_KMT+cutratio*t_E_KMT)&(data_C[0]>t_0_KMT-cutratio*t_E_KMT)).T[0]
-        data_S_index = np.argwhere((data_S[0]<t_0_KMT+cutratio*t_E_KMT)&(data_S[0]>t_0_KMT-cutratio*t_E_KMT)).T[0]
+        data_A_index = np.argwhere((data_A[0]<t_0_KMT+cutratio*t_E_KMT)&(data_A[0]>t_0_KMT-cutratio*t_E_KMT)&(data_A[5]<FWHM_threshold)&(data_A[5]>0)&(data_A[6]<sky_threshold)).T[0]
+        data_C_index = np.argwhere((data_C[0]<t_0_KMT+cutratio*t_E_KMT)&(data_C[0]>t_0_KMT-cutratio*t_E_KMT)&(data_C[5]<FWHM_threshold)&(data_C[5]>0)&(data_C[6]<sky_threshold)).T[0]
+        data_S_index = np.argwhere((data_S[0]<t_0_KMT+cutratio*t_E_KMT)&(data_S[0]>t_0_KMT-cutratio*t_E_KMT)&(data_S[5]<FWHM_threshold)&(data_S[5]>0)&(data_S[6]<sky_threshold)).T[0]
 
         order = np.argsort(time)
         time = time[order]
@@ -121,7 +130,13 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2
         dataA_sort = np.array([data_A[0][data_A_index],data_A[3][data_A_index],data_A[4][data_A_index]])
         dataC_sort = np.array([data_C[0][data_C_index],data_C[3][data_C_index],data_C[4][data_C_index]])
         dataS_sort = np.array([data_S[0][data_S_index],data_S[3][data_S_index],data_S[4][data_S_index]])
-        return KMT_official_args,killnan(np.array([time,mag,errorbar])), killnan(dataA_sort), killnan(dataC_sort), killnan(dataS_sort) 
+
+        data_prereturn = np.array([time,mag,1/errorbar])
+
+        data_prereturn = killnan(data_prereturn)
+        data_prereturn = killinf(data_prereturn)
+
+        return KMT_official_args,killnan(np.array([data_prereturn[0],data_prereturn[1],1/data_prereturn[2]])), killnan(dataA_sort), killnan(dataC_sort), killnan(dataS_sort) 
     else:
         order = np.argsort(time)
         time = time[order]
@@ -132,12 +147,17 @@ def getKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,cutratio=2
         dataC_sort = np.array([data_C[0],data_C[3],data_C[4]])
         dataS_sort = np.array([data_S[0],data_S[3],data_S[4]])
 
-        return KMT_official_args,killnan(np.array([time,mag,errorbar])), killnan(dataA_sort), killnan(dataC_sort), killnan(dataS_sort)
-    
+        data_prereturn = np.array([time,mag,1/errorbar])
+
+        data_prereturn = killnan(data_prereturn)
+        data_prereturn = killinf(data_prereturn)
+
+        return KMT_official_args,killnan(np.array([data_prereturn[0],data_prereturn[1],1/data_prereturn[2]])), killnan(dataA_sort), killnan(dataC_sort), killnan(dataS_sort) 
 
 
 
-def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
+
+def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0,cutratio=2,FWHM_threshold=7,sky_threshold=1000):
     data_args = pd.DataFrame(data=np.load("KMT_args.npy",allow_pickle=True))
     KMT_official_args = data_args.loc[data_args["index"]=="%d_%04d"%(year,posi,)].values[0]
     t_0_KMT = KMT_official_args[-4]
@@ -151,9 +171,9 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
     
     path = rootdir+"%d_%04d/"%(year,posi,)
     filelistI_A,filelistI_C,filelistI_S = getKMTIfilelist(rootdir,year,posi)
-    datas_A = [np.loadtxt(path+filename).T for filename in filelistI_A]
-    datas_C = [np.loadtxt(path+filename).T for filename in filelistI_C]
-    datas_S = [np.loadtxt(path+filename).T for filename in filelistI_S]
+    datas_A = [killstr(np.loadtxt(path+filename,dtype=str)).T for filename in filelistI_A]
+    datas_C = [killstr(np.loadtxt(path+filename,dtype=str)).T for filename in filelistI_C]
+    datas_S = [killstr(np.loadtxt(path+filename,dtype=str)).T for filename in filelistI_S]
     data_A = np.hstack(datas_A)
     data_C = np.hstack(datas_C)
     data_S = np.hstack(datas_S)
@@ -180,9 +200,9 @@ def DrawKMTdata(rootdir = "/mnt/e/KMT_catalog/",year=2018,posi=1,cut=0,fit=0):
         mag = mag[time_select_index]
         errorbar = errorbar[time_select_index]
         print(len(time))
-        data_A_index = np.argwhere((data_A[0]<t_0_KMT+2*t_E_KMT)&(data_A[0]>t_0_KMT-2*t_E_KMT)).T[0]
-        data_C_index = np.argwhere((data_C[0]<t_0_KMT+2*t_E_KMT)&(data_C[0]>t_0_KMT-2*t_E_KMT)).T[0]
-        data_S_index = np.argwhere((data_S[0]<t_0_KMT+2*t_E_KMT)&(data_S[0]>t_0_KMT-2*t_E_KMT)).T[0]
+        data_A_index = np.argwhere((data_A[0]<t_0_KMT+cutratio*t_E_KMT)&(data_A[0]>t_0_KMT-cutratio*t_E_KMT)&(data_A[5]<FWHM_threshold)&(data_A[5]>0)&(data_A[6]<sky_threshold)).T[0]
+        data_C_index = np.argwhere((data_C[0]<t_0_KMT+cutratio*t_E_KMT)&(data_C[0]>t_0_KMT-cutratio*t_E_KMT)&(data_C[5]<FWHM_threshold)&(data_C[5]>0)&(data_C[6]<sky_threshold)).T[0]
+        data_S_index = np.argwhere((data_S[0]<t_0_KMT+cutratio*t_E_KMT)&(data_S[0]>t_0_KMT-cutratio*t_E_KMT)&(data_S[5]<FWHM_threshold)&(data_S[5]>0)&(data_S[6]<sky_threshold)).T[0]
 
         order = np.argsort(time)
         time = time[order]
