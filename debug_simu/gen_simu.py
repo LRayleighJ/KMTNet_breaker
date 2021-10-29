@@ -38,10 +38,11 @@ class TimeData(object):
 
     def get_t_seq(self,max_count=20):
         count = 0
-        while True:
+        
+        for i_1 in range(50):
             index_timeseq = 0
             count_gettimeseq = 0
-            while True:
+            for i_2 in range(50):
                 index_timeseq = random.randint(0,self.num_available-1)
                 realtimeseq = self.time_data[self.time_data_available[index_timeseq]]
                 if len(realtimeseq)>self.num_point:
@@ -141,7 +142,7 @@ def generate_random_parameter_set(u0_max=1, max_iter=100):
             uc_max = 4.5*q**0.25
         alpha_rad = alpha/180.*np.pi
         n_iter = 0
-        while True:
+        for i_3 in range(50):
             uc = random.uniform(0, uc_max)
             u0 = uc - xc*np.sin(alpha_rad) + yc*np.cos(alpha_rad)
             n_iter += 1
@@ -156,7 +157,7 @@ def generate_random_parameter_set(u0_max=1, max_iter=100):
 global num_batch
 global num_bthlc
 
-num_batch = 1000
+num_batch = 500
 num_bthlc = 5
 
 def gen_simu_data(index_batch):
@@ -166,60 +167,54 @@ def gen_simu_data(index_batch):
     counter_total = 0
     for index_slc in range(num_bthlc):
         counter_total = 0
-        while True:
-            
-            times,d_times = c_time.get_t_seq()
-            
-            t_E = (times[-1]-times[0])/4
-            
-
-            if counter_total >= 10:
-                c_time = TimeData(datadir="/mnt/e/noisetimedata/timeseq/",num_point=1000)
-                noi_model = NoiseData(datadir="/mnt/e/noisetimedata/noisedata_hist/")
-                counter_total = 0
-                print("Devil data appears")
-                continue
-            print("timedata check")
-            
-
-            t_0 = 0
-            count_gen_args = 0
-            while True:
-                try:
-                    basis_m = np.min([20+2*np.random.randn(),22])
-                    u_0, rho, q, s, alpha = generate_random_parameter_set()
-                    args_data = [u_0, rho, q, s, alpha, t_E, basis_m, t_0]
-                    # single = mm.Model({'t_0': t_0, 'u_0': u_0, 't_E': t_E})
-                    planet = mm.Model({'t_0': t_0, 'u_0': u_0, 't_E': t_E, 's': s, 'q': q, 'alpha': alpha,'rho': rho})
-                    # planet_degeneracy = mm.Model({'t_0': t_0, 'u_0': u_0, 't_E': t_E, 's': 1/s, 'q': q, 'alpha': alpha,'rho': rho})
-                    
-                    planet.set_default_magnification_method('VBBL')
-                    
-                    lc = planet.magnification(times)
-                    
-                    
-                    noi, sig = noi_model.noisemodel(magnitude_tran(lc,m_0=basis_m))
-                    lc_noi = magnitude_tran(lc,basis_m) + noi
-
-                    break
-                except:
-                    print("fail generation of args")
-                    count_gen_args += 1
-                    if count_gen_args > 20:
-                        raise RuntimeError("Collapse")
-                        break
-                    continue
-
         
-            data_array=np.array([args_data,list(times),list(d_times),list(lc_noi),list(sig),list(lc_noi_single),list(magnitude_tran(lc,basis_m))])
-            np.save('/mnt/e/noisetimedata/test_gen/'+str(index_batch*num_bthlc+index_slc)+".npy",data_array,allow_pickle=True)
-            print("lc "+str(index_batch*num_bthlc+index_slc),datetime.datetime.now())
-            break
-            
-    del c_time
-    del noi_model
-    gc.collect()
+        for i_5 in range(50):
+            try:
+                times,d_times = c_time.get_t_seq()
+                break
+            except:
+                c_time = TimeData(datadir="/mnt/e/noisetimedata/timeseq/",num_point=1000)
+                continue
+        t_E = (times[-1]-times[0])/4
 
+        t_0 = 0
+        count_gen_args = 0
+        count_args_bearing = 0
+        for i_4 in range(50):
+            try:
+                basis_m = np.min([20+2*np.random.randn(),22])
+                u_0, rho, q, s, alpha = generate_random_parameter_set()
+                args_data = [u_0, rho, q, s, alpha, t_E, basis_m, t_0]
+                # single = mm.Model({'t_0': t_0, 'u_0': u_0, 't_E': t_E})
+                planet = mm.Model({'t_0': t_0, 'u_0': u_0, 't_E': t_E, 's': s, 'q': q, 'alpha': alpha,'rho': rho})
+                # planet_degeneracy = mm.Model({'t_0': t_0, 'u_0': u_0, 't_E': t_E, 's': 1/s, 'q': q, 'alpha': alpha,'rho': rho})
+                
+                planet.set_default_magnification_method('VBBL')
+                
+                lc = planet.magnification(times)
+                
+                
+                noi, sig = noi_model.noisemodel(magnitude_tran(lc,m_0=basis_m))
+                lc_noi = magnitude_tran(lc,basis_m) + noi
+
+                break
+            except:
+                print("fail generation of args")
+                count_gen_args += 1
+                if count_args_bearing > 5:
+                    raise RuntimeError("Noise model crash")
+                if count_gen_args > 20:
+                    print("Reload noise model: ", count_args_bearing)
+                    noi_model = NoiseData(datadir="/mnt/e/noisetimedata/noisedata_hist/")
+                    count_gen_args = 0
+                    count_args_bearing += 1
+                    continue
+                continue
+    
+        data_array=np.array([args_data,list(times),list(d_times),list(lc_noi),list(sig),list(magnitude_tran(lc,basis_m))])
+        np.save('/mnt/e/noisetimedata/test_gen/'+str(index_batch*num_bthlc+index_slc)+".npy",data_array,allow_pickle=True)
+        print("lc "+str(index_batch*num_bthlc+index_slc),datetime.datetime.now())
+        
 if __name__=="__main__":
     num_echo = 0
     u = num_echo*num_batch
