@@ -1,0 +1,18 @@
+Will not apply HSTS. The HSTS database must be a regular and non-world-writable file.
+ERROR: could not open HSTS store at '/home/zerui_liu/.wget-hsts'. HSTS will be disabled.
+--2021-11-14 20:42:16--  http://kmtnet.kasi.re.kr/~ulens/event/2018/data/KB180002/pysis/pysis.tar.gz
+Resolving kmtnet.kasi.re.kr (kmtnet.kasi.re.kr)... 210.219.33.212
+Connecting to kmtnet.kasi.re.kr (kmtnet.kasi.re.kr)|210.219.33.212|:80... connected.
+HTTP request sent, awaiting response... 301 Moved Permanently
+Location: https://kmtnet.kasi.re.kr/~ulens/event/2018/data/KB180002/pysis/pysis.tar.gz [following]
+--2021-11-14 20:42:16--  https://kmtnet.kasi.re.kr/~ulens/event/2018/data/KB180002/pysis/pysis.tar.gz
+Connecting to kmtnet.kasi.re.kr (kmtnet.kasi.re.kr)|210.219.33.212|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 86985 (85K) [application/x-gzip]
+Saving to: ‘pysis.tar.gz’
+
+     0K .......... .......... .......... .......... .......... 58%  129K 0s
+    50K .......... .......... .......... ....                 100% 10.6M=0.4s
+
+2021-11-14 20:42:17 (218 KB/s) - ‘pysis.tar.gz’ saved [86985/86985]
+
